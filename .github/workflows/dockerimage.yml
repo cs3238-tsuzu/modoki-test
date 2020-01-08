@@ -3,16 +3,34 @@ name: Docker Image CI
 on: [push]
 
 jobs:
-
   build:
-
     runs-on: ubuntu-latest
-
+    env:
+      GO111MODULE: on
     steps:
-    - uses: actions/checkout@v1
-    - name: Publish to Registry
-      uses: elgohr/Publish-Docker-Github-Action@master
-      with:
-        name: tsuzu/modoki-test
-        username: tsuzu
-        password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+      - uses: actions/checkout@v1
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
+      - uses: azure/docker-login@v1
+        with:
+          username: tsuzu
+          password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
+      - name: Build&Publish to Registry
+        run: |
+          docker build . -t tsuzu/modoki-test:${{ github.sha }}
+          docker push tsuzu/modoki-test:${{ github.sha }}
+
+      - name: Update latest image
+        if: github.ref == 'refs/heads/master'
+        run: |
+          docker tag tsuzu/modoki-test:${{ github.sha }} tsuzu/modoki-test:latest
+          docker push tsuzu/modoki-test:latest
+
+      - name: Deploy to modoki
+        if: github.ref == 'refs/heads/master'
+        run: |
+          go build -o modoki ./modoki-client/*.go
+          ./modoki tsuzu/modoki-test:${{ github.sha }}
