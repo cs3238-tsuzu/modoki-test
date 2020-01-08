@@ -34,3 +34,7 @@ jobs:
         run: |
           go build -o modoki ./modoki-client/*.go
           ./modoki tsuzu/modoki-test:${{ github.sha }}
+        env:
+          MODOKI_API_SERVER: ${{secrets.MODOKI_API_SERVER}}
+          MODOKI_API_SECRET: ${{secrets.MODOKI_API_SECRET}}
+          MODOKI_APP_ID: ${{secrets.MODOKI_APP_ID}}
